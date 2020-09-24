@@ -127,3 +127,13 @@ func TestPacketBufferEmptySecond(t *testing.T) {
 	assert.Len(t, packets, 1)
 	assert.Equal(t, []byte("test1\n"), packets[0].Contents)
 }
+
+func BenchmarkPacketBufferFlush(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		pb, _ := buildPacketAssembler()
+
+		for i := 0; i < 100; i++ {
+			pb.addMessage(generateRandomPacket(4))
+		}
+	}
+}
