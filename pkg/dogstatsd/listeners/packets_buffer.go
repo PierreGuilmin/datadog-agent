@@ -14,9 +14,9 @@ import (
 
 var (
 	tlmPacketsBufferFlushedTimer = telemetry.NewCounter("dogstatsd", "packets_buffer_flush_timer",
-		nil, "Count of packets buffer flush triggered by the timer")
+		[]string{"protocol"}, "Count of packets buffer flush triggered by the timer")
 	tlmPacketsBufferFlushedFull = telemetry.NewCounter("dogstatsd", "packets_buffer_flush_full",
-		nil, "Count of packets buffer flush triggered because the buffer is full")
+		[]string{"protocol"}, "Count of packets buffer flush triggered because the buffer is full")
 	tlmPacketsChannelSize = telemetry.NewGauge("dogstatsd", "packets_channel_size",
 		nil, "Number of packets in the packets channel")
 )
@@ -30,15 +30,17 @@ type packetsBuffer struct {
 	outputChannel chan Packets
 	closeChannel  chan struct{}
 	m             sync.Mutex
+	protocolTag   map[string]string
 }
 
-func newPacketsBuffer(bufferSize uint, flushTimer time.Duration, outputChannel chan Packets) *packetsBuffer {
+func newPacketsBuffer(bufferSize uint, flushTimer time.Duration, outputChannel chan Packets, protocol string) *packetsBuffer {
 	pb := &packetsBuffer{
 		bufferSize:    bufferSize,
 		flushTimer:    time.NewTicker(flushTimer),
 		outputChannel: outputChannel,
 		packets:       make(Packets, 0, bufferSize),
 		closeChannel:  make(chan struct{}),
+		protocolTag:   map[string]string{"protocol": protocol},
 	}
 	go pb.flushLoop()
 	return pb
@@ -50,7 +52,7 @@ func (pb *packetsBuffer) flushLoop() {
 		case <-pb.flushTimer.C:
 			pb.m.Lock()
 			pb.flush()
-			tlmPacketsBufferFlushedTimer.Inc()
+			tlmPacketsBufferFlushedTimer.IncWithTags(pb.protocolTag)
 			pb.m.Unlock()
 		case <-pb.closeChannel:
 			return
@@ -64,7 +66,7 @@ func (pb *packetsBuffer) append(packet *Packet) {
 	pb.packets = append(pb.packets, packet)
 	if uint(len(pb.packets)) >= pb.bufferSize {
 		pb.flush()
-		tlmPacketsBufferFlushedFull.Inc()
+		tlmPacketsBufferFlushedFull.IncWithTags(pb.protocolTag)
 	}
 }
 

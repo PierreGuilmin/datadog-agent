@@ -34,7 +34,7 @@ func newPacketManager(
 	packetOut chan Packets,
 	sharedPacketPool *PacketPool) *packetManager {
 
-	packetsBuffer := newPacketsBuffer(uint(packetsBufferSize), flushTimeout, packetOut)
+	packetsBuffer := newPacketsBuffer(uint(packetsBufferSize), flushTimeout, packetOut, "foo")
 
 	return &packetManager{
 		bufferSize:      bufferSize,

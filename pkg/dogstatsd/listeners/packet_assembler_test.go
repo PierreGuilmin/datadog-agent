@@ -11,7 +11,7 @@ import (
 
 func buildPacketAssembler() (*packetAssembler, chan Packets) {
 	out := make(chan Packets, 16)
-	psb := newPacketsBuffer(1, 1*time.Hour, out)
+	psb := newPacketsBuffer(1, 1*time.Hour, out, "foo")
 	pb := newPacketAssembler(100*time.Millisecond, psb, NewPacketPool(aggregator.MetricSamplePoolBatchSize))
 	return pb, out
 }
