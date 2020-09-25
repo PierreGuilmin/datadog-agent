@@ -130,10 +130,15 @@ func TestPacketBufferEmptySecond(t *testing.T) {
 
 func BenchmarkPacketBufferFlush(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		pb, _ := buildPacketAssembler()
+		pb, out := buildPacketAssembler()
 
 		for i := 0; i < 100; i++ {
 			pb.addMessage(generateRandomPacket(4))
+
+			// let's empty the packets channel to make sure it is not blocking
+			for len(out) > 0 {
+				<-out
+			}
 		}
 	}
 }
